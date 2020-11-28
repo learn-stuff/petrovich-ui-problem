@@ -1,6 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import * as yup from "yup";
-import Form from "react-formal";
+import { useRef, useState, useEffect } from "react";
 import { Machine, interpret } from "xstate";
 
 const events = {
@@ -10,13 +8,7 @@ const events = {
   WALK: "WALK"
 }
 
-const schema = yup.object({
-  walking: yup.bool(),
-  riding: yup.bool(),
-  ridingBy: yup.string(),
-});
-
-const getHomeMachine = ({ actions }) => Machine({
+const getHomeMachine = Machine({
   id: 'getHome',
   initial: 'walking',
   states: {
@@ -25,8 +17,7 @@ const getHomeMachine = ({ actions }) => Machine({
         [events.RIDE]: 'riding',
         [events.RIDE_TAXI]: 'riding.taxi',
         [events.RIDE_BUS]: 'riding.bus'
-      },
-      entry: ["setWalking"]
+      }
     },
     riding: {
       initial: 'bus',
@@ -37,41 +28,24 @@ const getHomeMachine = ({ actions }) => Machine({
         bus: {
           on: {
             [events.RIDE_TAXI]: 'taxi'
-          },
-          entry: ["setRidingBus"]
+          }
         },
         taxi: {
           on: {
             [events.RIDE_BUS]: 'bus'
-          },
-          entry: ["setRidingTaxi"]
+          }
         }
       }
     }
   }
-}, {
-  actions
 });
 
 const App = () => {
-  const [model, setModel] = useState({});
+  const [state, setState] = useState()
+  const interpreterRef = useRef(interpret(getHomeMachine).onTransition(setState));
+  const interperter = interpreterRef.current;
 
-  const setWalking = useCallback(() => setModel({ walking: true, riding: false, ridingBy: "" }), [setModel])
-  const setRidingBus = useCallback(() => setModel({ walking: false, riding: true, ridingBy: "bus" }), [setModel])
-  const setRidingTaxi = useCallback(() => setModel({ walking: false, riding: true, ridingBy: "taxi" }), [setModel])
-
-  const stateRef = useRef(
-    interpret(getHomeMachine({
-      actions: {
-        setWalking,
-        setRidingBus,
-        setRidingTaxi
-      }
-    }))
-  );
-  const state = stateRef.current;
-
-  useEffect(() => state.start(), [state]);
+  useEffect(() => interperter.start(), [interperter]);
 
   return (
     <div>
@@ -79,33 +53,52 @@ const App = () => {
       <p>
         I'm going by
       </p>
-      <Form
-        schema={schema}
-        value={model}
-      >
+      <form>
         <div>
           <label>
-            <Form.Field name='walking' type="checkbox" onChange={() => state.send(events.WALK)} />
+            <input
+              checked={state?.matches('walking') ?? false}
+              name='walking'
+              type="checkbox"
+              onChange={() => interperter.send(events.WALK)}
+            />
             Walking
           </label>
         </div>
         <div>
           <label>
-            <Form.Field name='riding' type="checkbox" onChange={() => state.send(events.RIDE)} />
+            <input
+              checked={state?.matches('riding') ?? false}
+              name='riding'
+              type="checkbox"
+              onChange={() => interperter.send(events.RIDE)}
+            />
             Riding
           </label>
           <div>
             <label>
-              <Form.Field name='ridingBy' type="radio" value="bus" onChange={() => state.send(events.RIDE_BUS)} />
+              <input
+                checked={state?.matches('riding.bus') ?? false}
+                name='ridingBy'
+                type="radio"
+                value="bus"
+                onChange={() => interperter.send(events.RIDE_BUS)}
+              />
               a bus
             </label>
             <label>
-              <Form.Field name='ridingBy' type="radio" value="taxi" onChange={() => state.send(events.RIDE_TAXI)} />
+              <input
+                checked={state?.matches('riding.taxi') ?? false}
+                name='ridingBy'
+                type="radio"
+                value="taxi"
+                onChange={() => interperter.send(events.RIDE_TAXI)}
+              />
               taxi
             </label>
           </div>
         </div>
-      </Form>
+      </form>
     </div>
   );
 }
