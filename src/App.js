@@ -40,12 +40,12 @@ const getHomeMachine = Machine({
   }
 });
 
-const App = () => {
+const useMachine = stateMachine => {
   const [state, setState] = useState()
   const serviceRef = useRef(null);
 
   if (serviceRef.current === null) {
-    serviceRef.current = interpret(getHomeMachine);
+    serviceRef.current = interpret(stateMachine);
   }
 
   const send = serviceRef.current.send;
@@ -59,6 +59,12 @@ const App = () => {
       serviceRef.current = null;
     };
   }, [serviceRef]);
+
+  return [state, send];
+}
+
+const App = () => {
+  const [state, send] = useMachine(getHomeMachine)
 
   return (
     <div>
