@@ -42,10 +42,23 @@ const getHomeMachine = Machine({
 
 const App = () => {
   const [state, setState] = useState()
-  const serviceRef = useRef(interpret(getHomeMachine).onTransition(setState));
-  const service = serviceRef.current;
+  const serviceRef = useRef(null);
 
-  useEffect(() => service.start(), [service]);
+  if (serviceRef.current === null) {
+    serviceRef.current = interpret(getHomeMachine);
+  }
+
+  const send = serviceRef.current.send;
+
+  useEffect(() => {
+    serviceRef.current.start();
+    serviceRef.current.onTransition(setState);
+
+    return () => {
+      serviceRef.current?.stop();
+      serviceRef.current = null;
+    };
+  }, [serviceRef]);
 
   return (
     <div>
@@ -60,7 +73,7 @@ const App = () => {
               checked={state?.matches('walking') ?? false}
               name='walking'
               type="checkbox"
-              onChange={() => service.send(events.WALK)}
+              onChange={() => send(events.WALK)}
             />
             Walking
           </label>
@@ -71,7 +84,7 @@ const App = () => {
               checked={state?.matches('riding') ?? false}
               name='riding'
               type="checkbox"
-              onChange={() => service.send(events.RIDE)}
+              onChange={() => send(events.RIDE)}
             />
             Riding
           </label>
@@ -82,7 +95,7 @@ const App = () => {
                 name='ridingBy'
                 type="radio"
                 value="bus"
-                onChange={() => service.send(events.RIDE_BUS)}
+                onChange={() => send(events.RIDE_BUS)}
               />
               a bus
             </label>
@@ -92,7 +105,7 @@ const App = () => {
                 name='ridingBy'
                 type="radio"
                 value="taxi"
-                onChange={() => service.send(events.RIDE_TAXI)}
+                onChange={() => send(events.RIDE_TAXI)}
               />
               taxi
             </label>
