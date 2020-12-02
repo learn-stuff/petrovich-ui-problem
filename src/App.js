@@ -9,30 +9,36 @@ const events = {
 }
 
 const getHomeMachine = Machine({
-  id: 'getHome',
-  initial: 'walking',
+  initial: 'global',
   states: {
-    walking: {
+    global: {
+      initial: 'walking',
       on: {
-        [events.RIDE]: 'riding',
-        [events.RIDE_TAXI]: 'riding.taxi',
-        [events.RIDE_BUS]: 'riding.bus'
-      }
-    },
-    riding: {
-      initial: 'bus',
-      on: {
-        [events.WALK]: 'walking'
+        [events.RIDE_TAXI]: 'global.riding.taxi',
+        [events.RIDE_BUS]: 'global.riding.bus'
       },
       states: {
-        bus: {
+        idle: {
           on: {
-            [events.RIDE_TAXI]: 'taxi'
+            [events.RIDE]: 'riding',
+            [events.WALK]: 'walking'
+          }            
+        },
+        walking: {
+          on: {
+            [events.RIDE]: 'riding',
+            [events.WALK]: 'idle'
           }
         },
-        taxi: {
+        riding: {
+          initial: 'bus',
           on: {
-            [events.RIDE_BUS]: 'bus'
+            [events.WALK]: 'walking',
+            [events.RIDE]: 'idle',
+          },
+          states: {
+            bus: {},
+            taxi: {}
           }
         }
       }
@@ -76,7 +82,7 @@ const App = () => {
         <div>
           <label>
             <input
-              checked={state?.matches('walking') ?? false}
+              checked={state?.matches('global.walking') ?? false}
               name='walking'
               type="checkbox"
               onChange={() => send(events.WALK)}
@@ -87,7 +93,7 @@ const App = () => {
         <div>
           <label>
             <input
-              checked={state?.matches('riding') ?? false}
+              checked={state?.matches('global.riding') ?? false}
               name='riding'
               type="checkbox"
               onChange={() => send(events.RIDE)}
@@ -97,7 +103,7 @@ const App = () => {
           <div>
             <label>
               <input
-                checked={state?.matches('riding.bus') ?? false}
+                checked={state?.matches('global.riding.bus') ?? false}
                 name='ridingBy'
                 type="radio"
                 value="bus"
@@ -107,7 +113,7 @@ const App = () => {
             </label>
             <label>
               <input
-                checked={state?.matches('riding.taxi') ?? false}
+                checked={state?.matches('global.riding.taxi') ?? false}
                 name='ridingBy'
                 type="radio"
                 value="taxi"
