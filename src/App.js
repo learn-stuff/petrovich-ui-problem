@@ -9,8 +9,19 @@ const events = {
 }
 
 const getHomeMachine = Machine({
-  initial: 'global',
+  type: 'parallel',
   states: {
+    riding_enabled: {
+      initial: 'no',
+      states: {
+        yes: {},
+        no: {
+          on: {
+            [events.RIDE]: 'yes'
+          }
+        }
+      }
+    },
     global: {
       initial: 'walking',
       on: {
@@ -100,7 +111,7 @@ const App = () => {
             />
             Riding
           </label>
-          <div>
+          { state?.matches('riding_enabled.yes') && <div>
             <label>
               <input
                 checked={state?.matches('global.riding.bus') ?? false}
@@ -121,7 +132,7 @@ const App = () => {
               />
               taxi
             </label>
-          </div>
+          </div> }
         </div>
       </form>
     </div>
